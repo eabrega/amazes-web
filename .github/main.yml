@@ -1,0 +1,38 @@
+name: CI
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+env:
+  NAME: amazes-web
+  PORT: 7020
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Login
+        uses: docker/login-action@v1.6.0
+        with:
+          username: ${{ secrets.DOCKER_LOGIN }}
+          password: ${{ secrets.DOCKER_PASS }}
+      - uses: actions/checkout@v2
+      - name: docker build
+        run: |
+          docker build -t eabrega/$NAME:$GITHUB_RUN_NUMBER .
+          docker push eabrega/$NAME:$GITHUB_RUN_NUMBER
+          git tag prod$GITHUB_RUN_NUMBER
+          git push origin --tags
+      - name: SSH Remote Commands
+        uses: appleboy/ssh-action@master
+        env:
+          TAG: "${{ github.run_number }}"
+        with:
+          envs: TAG, NAME
+          host: ${{ secrets.DEPLOY_SERVER_IP }}
+          port: ${{ secrets.DEPLOY_SERVER_PORT }}
+          username: ${{ secrets.USER_NAME }}
+          key: ${{ secrets.KEY }}
+          script: |
+            docker rm -f $NAME-1
+            docker run -id -p $PORT:80 --name $NAME-1 eabrega/$NAME:$TAG
