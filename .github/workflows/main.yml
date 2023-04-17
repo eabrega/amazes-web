@@ -6,7 +6,7 @@ on:
     branches: [master]
 env:
   NAME: amazes-web
-  DOCKER_PORT: 7020
+  DOCKER_PORT: 7201
 jobs:
   build:
     runs-on: ubuntu-latest
